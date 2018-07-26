@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerEditBookEvent;
 import org.bukkit.inventory.Inventory;
@@ -57,7 +58,6 @@ public class Menu implements Listener {
 	public Menu(Player p) {
 		this.p = p;
 		mailbox = MailboxManager.getMailbox(p.getUniqueId());
-		Utils.cout(String.valueOf(mailbox == null));
 		
 		item_MainMenu_MyMailEmpty = Utils.editHead(item_MainMenu_MyMailEmpty_Template, -1, null, null, p.getName());
 		item_MyMail_Info = Utils.editHead(item_MyMail_Info_Template, -1, null, null, p.getName());
@@ -248,16 +248,25 @@ public class Menu implements Listener {
 		}
 	}
 	@EventHandler
+	public void onInventoryClose(InventoryCloseEvent e) {
+		if (e.getPlayer().getUniqueId().equals(p.getUniqueId())) {
+			e.getPlayer().openInventory(e.getInventory());
+		}
+	}
+	@EventHandler
 	public void onPlayerEditBook(PlayerEditBookEvent e) {
 		Utils.cout("&aPlayerEditBookEvent triggered!");
-		Utils.cout(e.getNewBookMeta().getPage(0));
-		System.out.println(e.isSigning());
+		Utils.cout(e.getNewBookMeta().getPage(1));
+		Utils.cout(e.isSigning());
+		Utils.cout("&ePlayerEditBookEvent end!");
 	}
 	@EventHandler
 	public void onPlayerChat(AsyncPlayerChatEvent e) {
-		if (e.getPlayer().equals(p)) {
+		if (e.getPlayer().getUniqueId().equals(p.getUniqueId())) {
+			Utils.cout("&aAsyncPlayerChatEvent triggered.");
 			PacketPlayOutCustomPayload packet = new PacketPlayOutCustomPayload("MC|BOpen", new PacketDataSerializer(Unpooled.EMPTY_BUFFER));
 			((CraftPlayer)p).getHandle().playerConnection.sendPacket(packet);
+			Utils.cout("&eAsyncPlayerChatEvent end.");
 		}
 	}
 }

@@ -32,8 +32,8 @@ public class Utils {
 	public static final String _21 = "§";
 	private static final PluginManager pluginManager = Bukkit.getServer().getPluginManager();
 	
-	public static void cout(String msg) {
-		Bukkit.getServer().getConsoleSender().sendMessage(colorize(msg));
+	public static void cout(Object obj) {
+		Bukkit.getServer().getConsoleSender().sendMessage(colorize(String.valueOf(obj)));
 	}
 	//////////////////
 	// STRING UTILS //
