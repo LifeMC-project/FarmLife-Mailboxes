@@ -57,6 +57,7 @@ public class Menu implements Listener {
 	public Menu(Player p) {
 		this.p = p;
 		mailbox = MailboxManager.getMailbox(p.getUniqueId());
+		Utils.cout(String.valueOf(mailbox == null));
 		
 		item_MainMenu_MyMailEmpty = Utils.editHead(item_MainMenu_MyMailEmpty_Template, -1, null, null, p.getName());
 		item_MyMail_Info = Utils.editHead(item_MyMail_Info_Template, -1, null, null, p.getName());

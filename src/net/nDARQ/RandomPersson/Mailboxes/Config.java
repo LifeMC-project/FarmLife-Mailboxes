@@ -28,6 +28,9 @@ public class Config {
 		if (!mailboxFile.exists()) {
 			try {
 				mailboxFile.createNewFile();
+				YamlConfiguration conf = getDefaultConfig();
+				conf.save(mailboxFile);
+				return conf;
 			}
 			catch (IOException exc) {
 				exc.printStackTrace();

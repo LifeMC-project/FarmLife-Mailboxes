@@ -39,7 +39,6 @@ public class Mailbox {
 	public Mailbox(UUID uuid, int capacity) {
 		this.uuid = uuid;
 		this.capacity = capacity;
-		this.texture = Texture.DEFAULT;
 	}
 	
 	/////////////

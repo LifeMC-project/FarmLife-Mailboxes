@@ -14,7 +14,6 @@ import org.bukkit.event.player.PlayerQuitEvent;
 
 import net.nDARQ.RandomPersson.Mailboxes.Mailbox.Texture;
 import net.nDARQ.RandomPersson.Mailboxes.mail.CustomMail;
-import net.nDARQ.RandomPersson.Mailboxes.menu.MenuHandler;
 import net.nDARQ.RandomPersson.Mailboxes.utils.Utils;
 
 public class MailboxManager implements Listener {
@@ -36,16 +35,8 @@ public class MailboxManager implements Listener {
 					((Number)map.get("sentDate")).longValue(),
 					((Number)map.get("expDate")).longValue()));
 		});
-//		for (final Map<?, ?> map : conf.getMapList("mail")) {
-//			mailbox.addMail(new CustomMail(UUID.fromString((String)map.get("sender")),
-//					(String)map.get("senderName"),
-//					(String)map.get("message"),
-//					((Number)map.get("storagePointer")).longValue(),
-//					((Number)map.get("sentDate")).longValue(),
-//					((Number)map.get("expDate")).longValue()));
-//		}
 		
-//		System.out.println("Mailbox " + uuid.toString() + " loaded.");
+		loadedMailboxes.put(uuid, mailbox);
 		return true;
 	}
 	private static boolean saveMailbox(UUID uuid) {
@@ -76,9 +67,7 @@ public class MailboxManager implements Listener {
 	@EventHandler//(priority=EventPriority.LOWEST)
 	public void onPlayerJoin(PlayerJoinEvent e) {
 		Utils.cout("&ePlayer joined.");
-		YamlConfiguration conf = Config.getConfig(e.getPlayer().getUniqueId());
-		loadMailbox(e.getPlayer().getUniqueId());
-		MenuHandler.openMenu(e.getPlayer());
+		System.out.println(loadMailbox(e.getPlayer().getUniqueId()));
 		//CompletableFuture.supplyAsync(() -> loadMailbox(e.getPlayer().getUniqueId())).thenRun(() -> MenuHandler.openMenu(e.getPlayer()));
 		Utils.cout("&aPlayerJoinEvent completed.");
 		

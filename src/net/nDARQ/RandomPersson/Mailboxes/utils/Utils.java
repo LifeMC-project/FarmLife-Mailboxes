@@ -165,23 +165,25 @@ public class Utils {
 	public static ItemStack editHead(ItemStack item, int count, String name, String lore, String skin) {
 		ItemStack newItem = editItem(item, null, count, name, lore, -1);
 		
-		ItemMeta meta = newItem.getItemMeta();
-		if (meta instanceof SkullMeta) {
-			SkullMeta sm = (SkullMeta)meta;
-			if (skin.startsWith("eyJ0ZXh0dXJlcyI6")) {
-				GameProfile gp = getNonPlayerProfileFromString(skin);
-				try {
-					Field profileField = sm.getClass().getDeclaredField("profile");
-					profileField.setAccessible(true);
-					profileField.set(sm, gp);
-				} catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException exc) {
-					exc.printStackTrace();
+		if (skin != null && skin != "") {
+			ItemMeta meta = newItem.getItemMeta();
+			if (meta instanceof SkullMeta) {
+				SkullMeta sm = (SkullMeta)meta;
+				if (skin.startsWith("eyJ0ZXh0dXJlcyI6")) {
+					GameProfile gp = getNonPlayerProfileFromString(skin);
+					try {
+						Field profileField = sm.getClass().getDeclaredField("profile");
+						profileField.setAccessible(true);
+						profileField.set(sm, gp);
+					} catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException exc) {
+						exc.printStackTrace();
+					}
 				}
+				else {
+					sm.setOwner(skin);
+				}
+				newItem.setItemMeta(meta);
 			}
-			else {
-				sm.setOwner(skin);
-			}
-			newItem.setItemMeta(meta);
 		}
 		
 		return newItem;

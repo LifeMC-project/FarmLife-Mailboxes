@@ -1,12 +1,12 @@
 package net.nDARQ.RandomPersson.Mailboxes;
 
-import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import net.nDARQ.RandomPersson.Mailboxes.menu.MenuHandler;
 import net.nDARQ.RandomPersson.Mailboxes.utils.Utils;
 
 public class Mailboxes2 extends JavaPlugin implements CommandExecutor {
@@ -30,9 +30,13 @@ public class Mailboxes2 extends JavaPlugin implements CommandExecutor {
 	
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (sender instanceof Player) {
+			Player p = (Player)sender;
 //			sender.sendMessage("Command activated");
-			Block block = ((Player)sender).getLocation().getBlock();
-			Utils.createSkull(block, Mailbox.Texture.DEFAULT.getCode());
+			
+			MenuHandler.openMenu(p);
+			
+//			Block block = ((Player)sender).getLocation().getBlock();
+//			Utils.createSkull(block, Mailbox.Texture.DEFAULT.getCode());
 		}
 		else {
 			
