@@ -2,7 +2,6 @@ package net.nDARQ.RandomPersson.Mailboxes;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -15,6 +14,8 @@ import org.bukkit.event.player.PlayerQuitEvent;
 
 import net.nDARQ.RandomPersson.Mailboxes.Mailbox.Texture;
 import net.nDARQ.RandomPersson.Mailboxes.mail.CustomMail;
+import net.nDARQ.RandomPersson.Mailboxes.menu.MenuHandler;
+import net.nDARQ.RandomPersson.Mailboxes.utils.Utils;
 
 public class MailboxManager implements Listener {
 	private static final HashMap<UUID,Mailbox> loadedMailboxes = new HashMap<UUID,Mailbox>();
@@ -26,7 +27,7 @@ public class MailboxManager implements Listener {
 	private static boolean loadMailbox(UUID uuid) {
 		YamlConfiguration conf = Config.getConfig(uuid);
 		Mailbox mailbox = new Mailbox(uuid);
-		mailbox.setTexture(Texture.valueOf(conf.getString("texture")));
+		mailbox.setTexture(Texture.value(conf.getString("texture")));
 		conf.getMapList("mail").stream().forEach(map -> {
 			mailbox.addMail(new CustomMail(UUID.fromString((String)map.get("sender")),
 					(String)map.get("senderName"),
@@ -45,10 +46,9 @@ public class MailboxManager implements Listener {
 //		}
 		
 //		System.out.println("Mailbox " + uuid.toString() + " loaded.");
-		
 		return true;
 	}
-	private static boolean saveMailbox(UUID uuid) {//TODO change argument to Mailbox?
+	private static boolean saveMailbox(UUID uuid) {
 		Mailbox mailbox = loadedMailboxes.get(uuid);
 		YamlConfiguration conf = Config.getConfig(mailbox.getUUID());
 		
@@ -73,13 +73,18 @@ public class MailboxManager implements Listener {
 		loadedMailboxes.remove(uuid);
 	}
 	
-	@EventHandler(priority=EventPriority.LOWEST)
+	@EventHandler//(priority=EventPriority.LOWEST)
 	public void onPlayerJoin(PlayerJoinEvent e) {
-		CompletableFuture.supplyAsync(() -> loadMailbox(e.getPlayer().getUniqueId()));
+		Utils.cout("&ePlayer joined.");
+		YamlConfiguration conf = Config.getConfig(e.getPlayer().getUniqueId());
+		loadMailbox(e.getPlayer().getUniqueId());
+		MenuHandler.openMenu(e.getPlayer());
+		//CompletableFuture.supplyAsync(() -> loadMailbox(e.getPlayer().getUniqueId())).thenRun(() -> MenuHandler.openMenu(e.getPlayer()));
+		Utils.cout("&aPlayerJoinEvent completed.");
+		
 	}
 	@EventHandler(priority=EventPriority.LOWEST)
 	public void onPlayerQuit(PlayerQuitEvent e) {
-		CompletableFuture.supplyAsync(() -> saveMailbox(e.getPlayer().getUniqueId())).
-				thenRun(() -> unloadMailbox(e.getPlayer().getUniqueId()));
+		CompletableFuture.supplyAsync(() -> saveMailbox(e.getPlayer().getUniqueId())).thenRun(() -> unloadMailbox(e.getPlayer().getUniqueId()));
 	}
 }

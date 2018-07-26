@@ -1,9 +1,6 @@
 package net.nDARQ.RandomPersson.Mailboxes.utils;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -14,7 +11,7 @@ import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.SkullType;
 import org.bukkit.block.Block;
-import org.bukkit.block.Skull;
+import org.bukkit.craftbukkit.v1_12_R1.block.CraftSkull;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
@@ -28,17 +25,21 @@ import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 
+import net.minecraft.server.v1_12_R1.TileEntitySkull;
 import net.nDARQ.RandomPersson.Mailboxes.Mailboxes2;
 
 public class Utils {
 	public static final String _21 = "§";
 	private static final PluginManager pluginManager = Bukkit.getServer().getPluginManager();
 	
+	public static void cout(String msg) {
+		Bukkit.getServer().getConsoleSender().sendMessage(colorize(msg));
+	}
 	//////////////////
 	// STRING UTILS //
 	//////////////////
 	public static String colorize(String s) {
-		return s.replaceAll("&", _21);
+		return s==null?"":s.replaceAll("&", _21);
 	}
 	public static String getStringFromArray(String[] array, int startIndex, String separator) {
 		String opt = array[startIndex++];
@@ -220,60 +221,25 @@ public class Utils {
 		con.getClass().getMethod("a", respawnPacket.getClass()).invoke(con, respawnPacket);
 	}
 	
-	/////////
-	// NMS //
-	/////////
-	private static final String version = Bukkit.getServer().getClass().getPackage().getName().substring(23);
-	public static Class<?> getNMSClass(String name) {
-		Class<?> clazz = null;
-		try {
-			clazz = Class.forName("net.minecraft.server." + version + "." + name);
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-		return clazz;
-	}
-	public static Class<?> getCBClass(String name) {
-		Class<?> clazz = null;
-		try {
-			clazz = Class.forName("org.bukkit.craftbukkit." + version + "." + name);
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-		return clazz;
-	}
-	private static Class<?> blockPosition;
-	private static Constructor<?> blockPositionConstructor;
-	private static Method getWorldHandle, getTileEntity, setGameProfile;
-	public static void init() {//TODO
-		try {
-			blockPosition = getNMSClass("BlockPosition");
-			blockPositionConstructor = blockPosition.getConstructor(int.class, int.class, int.class);
-			getWorldHandle = getCBClass("CraftWorld").getMethod("getHandle");
-			getTileEntity = getNMSClass("WorldServer").getMethod("getTileEntity", blockPosition);
-			setGameProfile = getNMSClass("TileEntitySkull").getMethod("setGameProfile", GameProfile.class);
-		} catch (NoSuchMethodException | SecurityException e) {
-			e.printStackTrace();
-		}
-	}
-	
+	////////////////////
 	// SKULL TEXTURES //
-	public static void setSkullTexture(String texture, Block block) {
-		block.setType(Material.SKULL);
-		Skull skullData = (Skull)block.getState();
-		skullData.setSkullType(SkullType.PLAYER);
-		
-		try {
-			Object world = getWorldHandle.invoke(block.getWorld());
-			Object tile = getTileEntity.invoke(world, blockPositionConstructor.newInstance(block.getX(), block.getY(), block.getZ()));
-			setGameProfile.invoke(tile, getNonPlayerProfileFromString(texture));
-		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | InstantiationException | SecurityException e) {
-			e.printStackTrace();
+	////////////////////
+	@SuppressWarnings("deprecation")
+	public static void createSkull(Block block, String texture) {//TODO fix skull position in the block
+		byte data = (byte)1;
+		if (block.getType() == Material.SKULL) {
+			data = block.getData();
+			cout(String.valueOf(data));
 		}
-//		TileEntitySkull skullTile = (TileEntitySkull)((CraftWorld)block.getWorld()).getHandle().getTileEntity(new BlockPosition(block.getX(), block.getY(), block.getZ()));
-//		skullTile.setGameProfile(getNonPlayerProfileFromTexture(texture));		
-		
-		block.getState().update(true);
+		block.setType(Material.SKULL);
+		CraftSkull cSkull = (CraftSkull)block.getState();
+		cSkull.setSkullType(SkullType.PLAYER);
+		TileEntitySkull tes = new TileEntitySkull();
+		tes.load(cSkull.getSnapshotNBT());
+		tes.setGameProfile(getNonPlayerProfileFromString(texture));
+		cSkull.load(tes);
+		cSkull.update(true);
+		block.setData(data);
 	}
 	
 	public static GameProfile getNonPlayerProfileFromString(String texture) {

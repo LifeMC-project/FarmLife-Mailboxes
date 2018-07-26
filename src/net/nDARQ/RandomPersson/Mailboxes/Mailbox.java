@@ -23,6 +23,9 @@ public class Mailbox {
 		public String getCode() {
 			return code;
 		}
+		public static Texture value(String arg0) {
+			return (arg0==null ? DEFAULT : valueOf(arg0));
+		}
 	}
 	
 	private final UUID uuid;
@@ -79,6 +82,6 @@ public class Mailbox {
 	// UTIL //
 	//////////
 	public void save() {
-		//TODO or not
+		//TODO or not todo
 	}
 }

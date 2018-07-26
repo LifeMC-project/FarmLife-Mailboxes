@@ -14,7 +14,7 @@ public class MailUtils {
 		return Config.mailExpTimeInMilis+sentDate-System.currentTimeMillis();
 	}
 	public static ItemStack[] getItems(long storagePointer) {
-		
+		//TODO
 		return null;
 	}
 }

@@ -1,0 +1,9 @@
+name: Mailboxes
+version: 0.0
+author: RandomPersson
+main: net.nDARQ.RandomPersson.Mailboxes.Mailboxes2
+commands:
+  mailbox:
+    description: random description
+    aliases: [mb, mailboxes]
+    permission: mailboxes.use
