@@ -30,7 +30,7 @@ public class Mailboxes2 extends JavaPlugin implements CommandExecutor {
 	
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (sender instanceof Player) {
-			sender.sendMessage("Command activated");
+//			sender.sendMessage("Command activated");
 			Block block = ((Player)sender).getLocation().getBlock();
 			Utils.createSkull(block, Mailbox.Texture.DEFAULT.getCode());
 		}
