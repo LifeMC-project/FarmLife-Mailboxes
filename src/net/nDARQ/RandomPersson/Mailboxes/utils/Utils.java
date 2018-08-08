@@ -35,6 +35,15 @@ public class Utils {
 	public static void cout(Object obj) {
 		Bukkit.getServer().getConsoleSender().sendMessage(colorize(String.valueOf(obj)));
 	}
+	public static boolean isEmpty(Object[] array) {
+		for (Object obj : array) {
+			if (obj != null) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
 	//////////////////
 	// STRING UTILS //
 	//////////////////
@@ -70,14 +79,6 @@ public class Utils {
 		}
 		
 		return lines;
-	}
-	public static boolean isEmpty(Object[] array) {
-		for (Object obj : array) {
-			if (obj != null) {
-				return false;
-			}
-		}
-		return true;
 	}
 	
 	//////////////

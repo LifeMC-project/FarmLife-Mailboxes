@@ -16,6 +16,9 @@ public class Config {
 	//                                            D*H *s   *ms
 	private static final File mailboxFolder = Paths.get(Mailboxes2.getInstance().getDataFolder().toPath().toString(), "mailboxes").toFile();
 	
+	public static void createMailboxFolder() {
+		mailboxFolder.mkdirs();
+	}
 	public static YamlConfiguration getDefaultConfig() {
 		YamlConfiguration conf = new YamlConfiguration();
 		conf.set("texture", "DEFAULT");

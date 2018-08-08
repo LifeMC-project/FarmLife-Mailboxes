@@ -1,18 +1,16 @@
 package net.nDARQ.RandomPersson.Mailboxes.menu;
 
-import java.util.concurrent.CompletableFuture;
-
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_12_R1.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.event.player.PlayerEditBookEvent;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
@@ -27,6 +25,10 @@ import net.nDARQ.RandomPersson.Mailboxes.mail.Mail;
 import net.nDARQ.RandomPersson.Mailboxes.utils.Utils;
 
 public class Menu implements Listener {
+	public enum InputType {
+		MESSAGE, RECEIPIENT;
+	}
+	
 	private static final ItemStack
 			item_MainMenu_SendMail = Utils.newItem(Material.MAP, 1, "&b&lSend Mail", "&7Send a letter or package to~&7another player on FarmLife!~~&e> Click to open menu!"),
 			item_MainMenu_MyMailEmpty_Template = Utils.newHead(1, "&cMy Mail", "&7You don't have any mail.~&7Try sending some, you~&7might get mail in return!", "Traeton"),
@@ -54,9 +56,13 @@ public class Menu implements Listener {
 	final Inventory inv_MainMenu, inv_SendMail, inv_MyMail, inv_Settings;
 	final ItemStack item_MainMenu_MyMailEmpty, item_MyMail_Info;
 	Mail mail = null;
+	InputType inputType;
+	boolean reopenInventory;
 	
 	public Menu(Player p) {
 		this.p = p;
+		inputType = InputType.MESSAGE;
+		reopenInventory = true;
 		mailbox = MailboxManager.getMailbox(p.getUniqueId());
 		
 		item_MainMenu_MyMailEmpty = Utils.editHead(item_MainMenu_MyMailEmpty_Template, -1, null, null, p.getName());
@@ -124,9 +130,9 @@ public class Menu implements Listener {
 		p.closeInventory();
 		switch (title) {
 			case "Mailbox":
-				inv_MainMenu.setItem(13, mailbox.getMailList().size() > 0 ?
+				inv_MainMenu.setItem(13, mailbox.getMailAmount() > 0 ?
 						item_MainMenu_MyMailEmpty :
-						Utils.editHead(item_MainMenu_MyMailEmpty, -1, "&b&lMy Mail", "&7Click to view your mail.~~&7You have " + mailbox.getMailList().size() + " piece" + (mailbox.getMailList().size()==1 ? "" : "s") + " of mail~~&e> Click to open menu!", null));
+						Utils.editHead(item_MainMenu_MyMailEmpty, -1, "&b&lMy Mail", "&7Click to view your mail.~~&7You have " + mailbox.getMailAmount() + " piece" + (mailbox.getMailAmount()==1 ? "" : "s") + " of mail~~&e> Click to open menu!", null));
 				p.openInventory(inv_MainMenu);
 				break;
 			case "Send Mail":
@@ -190,12 +196,6 @@ public class Menu implements Listener {
 					switch (e.getSlot()) {
 						case 28:
 							//TODO open chat - add message
-							CraftPlayer cp = (CraftPlayer)p;
-							EntityPlayer ep = cp.getHandle();
-							PacketPlayOutCustomPayload packet = new PacketPlayOutCustomPayload("MC|BOpen", new PacketDataSerializer(Unpooled.EMPTY_BUFFER));
-							ep.playerConnection.sendPacket(packet);
-//							ep.openBook(CraftItemStack.asNMSCopy(Utils.newItem(Material.BOOK_AND_QUILL, 1, "", "")));
-							
 							
 							break;
 						case 30:
@@ -250,23 +250,30 @@ public class Menu implements Listener {
 	@EventHandler
 	public void onInventoryClose(InventoryCloseEvent e) {
 		if (e.getPlayer().getUniqueId().equals(p.getUniqueId())) {
-			e.getPlayer().openInventory(e.getInventory());
+			e.getPlayer().openInventory(e.getInventory());//TODO check - put on delay if necessary
 		}
-	}
-	@EventHandler
-	public void onPlayerEditBook(PlayerEditBookEvent e) {
-		Utils.cout("&aPlayerEditBookEvent triggered!");
-		Utils.cout(e.getNewBookMeta().getPage(1));
-		Utils.cout(e.isSigning());
-		Utils.cout("&ePlayerEditBookEvent end!");
 	}
 	@EventHandler
 	public void onPlayerChat(AsyncPlayerChatEvent e) {
 		if (e.getPlayer().getUniqueId().equals(p.getUniqueId())) {
-			Utils.cout("&aAsyncPlayerChatEvent triggered.");
-			PacketPlayOutCustomPayload packet = new PacketPlayOutCustomPayload("MC|BOpen", new PacketDataSerializer(Unpooled.EMPTY_BUFFER));
-			((CraftPlayer)p).getHandle().playerConnection.sendPacket(packet);
-			Utils.cout("&eAsyncPlayerChatEvent end.");
+			switch (inputType) {
+				case MESSAGE:
+					mail.setMessage(e.getMessage());
+					reopenInventory = true;
+					break;
+				case RECEIPIENT:
+					
+					
+					
+					break;
+				default: {}
+			}
+		}
+	}
+	@EventHandler
+	public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent e) {
+		if (e.getPlayer().getUniqueId().equals(p.getUniqueId())) {
+			
 		}
 	}
 }

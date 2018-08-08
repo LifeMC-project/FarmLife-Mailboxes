@@ -47,8 +47,12 @@ public class Mailbox {
 	public UUID getUUID() {
 		return this.uuid;
 	}
+	@SuppressWarnings("unchecked")
 	public ArrayList<LockedMail> getMailList() {
-		return mailList;
+		return (ArrayList<LockedMail>)mailList.clone();
+	}
+	public int getMailAmount() {
+		return mailList.size();
 	}
 	public int getCapacity() {
 		return capacity;

@@ -10,8 +10,8 @@ public class MailUtils {
 		return new CustomMail(mail.getSenderUUID(), mail.getSenderName(), mail.getMessage(), mail.getStoragePointer(), mail.getSentDate(), mail.getExpDate());
 	}
 	
-	public static long getStandardExpDate(long sentDate) {
-		return Config.mailExpTimeInMilis+sentDate-System.currentTimeMillis();
+	public static long getStandardExpDate(long expDate) {
+		return Config.mailExpTimeInMilis+expDate-System.currentTimeMillis();
 	}
 	public static ItemStack[] getItems(long storagePointer) {
 		//TODO
