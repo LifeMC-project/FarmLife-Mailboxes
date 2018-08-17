@@ -8,7 +8,7 @@ import java.util.UUID;
 import org.bukkit.inventory.ItemStack;
 
 public class LockedMail {
-	private static final DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm a"), expFormat = new SimpleDateFormat("dd'd', hh'h', mm'm'");
+	public static final DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm a"), expFormat = new SimpleDateFormat("dd'd', hh'h', mm'm'");
 	private static final Date date = new Date();
 	protected UUID senderUUID;
 	protected String senderName, message;
@@ -28,7 +28,7 @@ public class LockedMail {
 		return message;
 	}
 	public ItemStack[] getItems() {
-		return items;
+		return items.clone();
 	}
 	public int getItemCount() {
 		int count = 0;

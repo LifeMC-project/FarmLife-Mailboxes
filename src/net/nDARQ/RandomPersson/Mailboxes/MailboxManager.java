@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -14,7 +15,8 @@ import org.bukkit.event.player.PlayerQuitEvent;
 
 import net.nDARQ.RandomPersson.Mailboxes.Mailbox.Texture;
 import net.nDARQ.RandomPersson.Mailboxes.mail.CustomMail;
-import net.nDARQ.RandomPersson.Mailboxes.utils.Utils;
+import net.nDARQ.RandomPersson.Mailboxes.mail.LockedMail;
+import net.nDARQ.RandomPersson.Mailboxes.mail.Mail;
 
 public class MailboxManager implements Listener {
 	private static final HashMap<UUID,Mailbox> loadedMailboxes = new HashMap<UUID,Mailbox>();
@@ -64,13 +66,29 @@ public class MailboxManager implements Listener {
 		loadedMailboxes.remove(uuid);
 	}
 	
-	@EventHandler//(priority=EventPriority.LOWEST)
-	public void onPlayerJoin(PlayerJoinEvent e) {
-		Utils.cout("&ePlayer joined.");
-		System.out.println(loadMailbox(e.getPlayer().getUniqueId()));
-		//CompletableFuture.supplyAsync(() -> loadMailbox(e.getPlayer().getUniqueId())).thenRun(() -> MenuHandler.openMenu(e.getPlayer()));
-		Utils.cout("&aPlayerJoinEvent completed.");
+	public static boolean sendMail(Mail mail, UUID recipientUUID) {
+		boolean mailboxUnloaded = getMailbox(recipientUUID) == null;
+		if (mailboxUnloaded) {
+			loadMailbox(recipientUUID);
+		}
+		Mailbox mb = getMailbox(recipientUUID);
+		if (!mb.addMail(mail.getItemCount() > 0 ? mail.lock(getNextStoragePointer()) : mail.lock(0L))) {
+			return false;
+		}
+		saveMailbox(recipientUUID);
+		if (mailboxUnloaded) {
+			unloadMailbox(recipientUUID);
+		}
+		return true;
+	}
+	private static long getNextStoragePointer() {
 		
+	}
+	
+	
+	@EventHandler(priority=EventPriority.LOWEST)
+	public void onPlayerJoin(PlayerJoinEvent e) {
+		CompletableFuture.supplyAsync(() -> loadMailbox(e.getPlayer().getUniqueId()));
 	}
 	@EventHandler(priority=EventPriority.LOWEST)
 	public void onPlayerQuit(PlayerQuitEvent e) {

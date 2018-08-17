@@ -1,12 +1,9 @@
 package net.nDARQ.RandomPersson.Mailboxes;
 
-import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.event.inventory.InventoryType;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import net.nDARQ.RandomPersson.Mailboxes.menu.MenuHandler;
@@ -24,26 +21,23 @@ public class Mailboxes2 extends JavaPlugin implements CommandExecutor {
 //		Utils.init();//TODO (?)
 		Utils.registerListener(new MailboxManager());
 		
-		//create chests (async)
+		//TODO create chests (async)
 	}
 	
 	public static JavaPlugin getInstance() {
 		return instance;
-		//save all mailboxes
+		//TODO save all mailboxes
 	}
 	
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (sender instanceof Player) {
 			Player p = (Player)sender;
-			sender.sendMessage("Command activated");
 			
-//			CraftPlayer cp = (CraftPlayer)p;
-//			EntityPlayer ep = cp.getHandle();
-			
-			Inventory inv = Bukkit.createInventory(null, InventoryType.CREATIVE);
-			p.openInventory(inv);
-			
-//			MenuHandler.openMenu(p);
+			if (args.length > 0 && args[0].equalsIgnoreCase("cancel")) {
+				MenuHandler.closeMenu(p);
+			} else {
+				MenuHandler.openMenu(p);
+			}
 			
 //			Block block = ((Player)sender).getLocation().getBlock();
 //			Utils.createSkull(block, Mailbox.Texture.DEFAULT.getCode());

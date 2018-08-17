@@ -124,6 +124,7 @@ public class Utils {
 		
 		return item;
 	}
+	@SuppressWarnings("deprecation")
 	public static ItemStack newHead(int count, String name, String lore, String skin) {
 		ItemStack item = newItem(Material.SKULL_ITEM, count, name, lore, 3);
 		
@@ -163,6 +164,7 @@ public class Utils {
 		
 		return newItem;
 	}
+	@SuppressWarnings("deprecation")
 	public static ItemStack editHead(ItemStack item, int count, String name, String lore, String skin) {
 		ItemStack newItem = editItem(item, null, count, name, lore, -1);
 		
@@ -228,11 +230,10 @@ public class Utils {
 	// SKULL TEXTURES //
 	////////////////////
 	@SuppressWarnings("deprecation")
-	public static void createSkull(Block block, String texture) {//TODO fix skull position in the block
+	public static void createSkull(Block block, String texture) {
 		byte data = (byte)1;
 		if (block.getType() == Material.SKULL) {
 			data = block.getData();
-			cout(String.valueOf(data));
 		}
 		block.setType(Material.SKULL);
 		CraftSkull cSkull = (CraftSkull)block.getState();

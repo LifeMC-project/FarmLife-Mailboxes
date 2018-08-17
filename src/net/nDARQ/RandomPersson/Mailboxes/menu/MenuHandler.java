@@ -9,10 +9,16 @@ public class MenuHandler {
 	private static HashMap<UUID,Menu> menus = new HashMap<UUID,Menu>();
 	
 	public static void openMenu(Player p) {
-		Menu menu = new Menu(p);
-		menus.put(p.getUniqueId(), menu);
+		if (menus.containsKey(p.getUniqueId())) {
+			menus.get(p.getUniqueId()).reopenMenu();;
+		} else {
+			Menu menu = new Menu(p);
+			menus.put(p.getUniqueId(), menu);
+		}
 	}
 	public static void closeMenu(Player p) {
-		menus.remove(p.getUniqueId());
+		if (menus.containsKey(p.getUniqueId())) {
+			menus.remove(p.getUniqueId()).closeMenu();
+		}
 	}
 }

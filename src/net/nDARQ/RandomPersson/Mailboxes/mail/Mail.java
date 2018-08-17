@@ -1,17 +1,21 @@
 package net.nDARQ.RandomPersson.Mailboxes.mail;
 
+import java.util.UUID;
+
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.ItemStack;
 
 import net.nDARQ.RandomPersson.Mailboxes.MailUtils;
 
 public class Mail extends LockedMail {
-	protected Mail() {}
-	public Mail(HumanEntity p) {
-		this.senderUUID = p.getUniqueId();
-		this.senderName = p.getName();
-		this.items = new ItemStack[5];
+	public Mail(HumanEntity sender) {
+		this(sender.getUniqueId(), sender.getName());
+	}
+	public Mail(UUID senderUUID, String senderName) {
+		this.senderUUID = senderUUID;
+		this.senderName = senderName;
 		this.storagePointer = -1L;//TODO (?)
+		this.items = new ItemStack[6];
 		this.sentDate = System.currentTimeMillis();
 		this.expDate = MailUtils.getStandardExpDate(sentDate);
 	}
@@ -39,6 +43,9 @@ public class Mail extends LockedMail {
 		return false;
 	}
 	public void removeItem(int id) {
+		for (int i=id; i<5; ++i) {
+			
+		}
 		this.items[id] = null;
 	}
 	public void overwriteItems(ItemStack[] items) {

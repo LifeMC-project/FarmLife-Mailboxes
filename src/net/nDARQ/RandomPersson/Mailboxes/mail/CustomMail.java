@@ -10,13 +10,11 @@ public class CustomMail extends Mail {
 		this(sender.getUniqueId(), sender.getName(), message, storagePointer, sentDate, expDate);
 	}
 	public CustomMail(UUID senderUUID, String senderName, String message, long storagePointer, long sentDate, long expDate) {
-		this.senderUUID = senderUUID;
-		this.senderName = senderName;
+		super(senderUUID, senderName);
 		this.message = message;
-		this.items = items;//TODO get items from storage
-		this.storagePointer = storagePointer;
-		this.sentDate = sentDate;
-		this.expDate = expDate;
+		if (storagePointer > 0) this.storagePointer = storagePointer;
+		if (sentDate >= 0) this.sentDate = sentDate;
+		if (expDate >= 0) this.expDate = expDate;
 	}
 	public CustomMail(HumanEntity p) {
 		super(p);
@@ -28,6 +26,12 @@ public class CustomMail extends Mail {
 	public void setSender(HumanEntity sender) {
 		this.senderUUID = sender.getUniqueId();
 		this.senderName = sender.getName();
+	}
+	public void setSenderUUID(UUID senderUUID) {
+		this.senderUUID = senderUUID;
+	}
+	public void setSenderName(String senderName) {
+		this.senderName = senderName;
 	}
 	public void setStoragePointer(long storagePointer) {
 		this.storagePointer = storagePointer;

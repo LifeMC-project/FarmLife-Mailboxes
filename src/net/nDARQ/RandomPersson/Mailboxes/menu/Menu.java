@@ -1,32 +1,34 @@
 package net.nDARQ.RandomPersson.Mailboxes.menu;
 
+import java.util.HashMap;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitTask;
 
-import io.netty.buffer.Unpooled;
-import net.minecraft.server.v1_12_R1.EntityPlayer;
-import net.minecraft.server.v1_12_R1.PacketDataSerializer;
-import net.minecraft.server.v1_12_R1.PacketPlayOutCustomPayload;
 import net.nDARQ.RandomPersson.Mailboxes.Mailbox;
 import net.nDARQ.RandomPersson.Mailboxes.MailboxManager;
+import net.nDARQ.RandomPersson.Mailboxes.Mailboxes2;
 import net.nDARQ.RandomPersson.Mailboxes.mail.LockedMail;
 import net.nDARQ.RandomPersson.Mailboxes.mail.Mail;
 import net.nDARQ.RandomPersson.Mailboxes.utils.Utils;
 
 public class Menu implements Listener {
 	public enum InputType {
-		MESSAGE, RECEIPIENT;
+		MESSAGE, RECIPIENT, NONE;
+	}
+	public enum MenuType {
+		MAIN_MENU, SEND_MAIL, MY_MAIL, SETTINGS;
 	}
 	
 	private static final ItemStack
@@ -55,15 +57,19 @@ public class Menu implements Listener {
 	final Mailbox mailbox;
 	final Inventory inv_MainMenu, inv_SendMail, inv_MyMail, inv_Settings;
 	final ItemStack item_MainMenu_MyMailEmpty, item_MyMail_Info;
-	Mail mail = null;
+	Mail mail;
+	OfflinePlayer recipient = null;
 	InputType inputType;
-	boolean reopenInventory;
+	MenuType currentMenu;
+	boolean closeInventoryMessage;
+	BukkitTask closeTask;
 	
 	public Menu(Player p) {
 		this.p = p;
-		inputType = InputType.MESSAGE;
-		reopenInventory = true;
+		inputType = InputType.NONE;
+		closeInventoryMessage = true;
 		mailbox = MailboxManager.getMailbox(p.getUniqueId());
+		mail = new Mail(p);
 		
 		item_MainMenu_MyMailEmpty = Utils.editHead(item_MainMenu_MyMailEmpty_Template, -1, null, null, p.getName());
 		item_MyMail_Info = Utils.editHead(item_MyMail_Info_Template, -1, null, null, p.getName());
@@ -76,32 +82,37 @@ public class Menu implements Listener {
 		prepareMenus();
 		Utils.registerListener(this);
 		
-		openMenu("Mailbox");
+		openInventory(MenuType.MAIN_MENU);
 	}
 	private void prepareMenus() {
+		// Main Menu - "Mailbox"
 		inv_MainMenu.setItem(11, item_MainMenu_SendMail);
 		inv_MainMenu.setItem(13, item_MainMenu_MyMailEmpty);
 		inv_MainMenu.setItem(15, item_MainMenu_Settings);
-		
+		// Send Mail Menu - "Send Mail"
 		inv_SendMail.setItem(4, item_SendMail_Info);
 		inv_SendMail.setItem(28, item_SendMail_AddMessage);
 		inv_SendMail.setItem(30, item_SendMail_SpecifyRecipient_Template);
 		inv_SendMail.setItem(33, item_SendMail_Red);
 		inv_SendMail.setItem(44, item_Exit);
-		
+		for (int i=11; i<16; ++i) {
+			inv_SendMail.setItem(i, item_NULL);
+		}
+		// My Mail Menu - "My Mail"
 		inv_MyMail.setItem(4, item_MyMail_Info);
-		for (int i=10; i<35; ++i) {//TODO check
+		for (int i=10; i<35; ++i) {
 			if ((i+1)%9 == 0) {
 				i+=2;
 			}
 			inv_MyMail.setItem(i, item_NULL);
 		}
 		inv_MyMail.setItem(53, item_Exit);
-		
+		// Settings Menu - "Settings"
 		inv_Settings.setItem(4, item_Settings_Info);
 		inv_Settings.setItem(10, item_Settings_DefaultSkin);
 		inv_Settings.setItem(44, item_Exit);
 		
+		// Background filling
 		for (int i=0; i<3*9; ++i) {
 			if (inv_MainMenu.getItem(i) == null)
 				inv_MainMenu.setItem(i, item_Background);
@@ -126,19 +137,26 @@ public class Menu implements Listener {
 		}
 	}
 	
-	public void openMenu(String title) {
-		p.closeInventory();
-		switch (title) {
-			case "Mailbox":
+	public void openInventory(MenuType menuType) {
+		closeInventoryMessage = false;
+		switch (menuType) {
+			case MAIN_MENU:
+				if (mailbox == null) Utils.cout("&4mailbox is null!");
 				inv_MainMenu.setItem(13, mailbox.getMailAmount() > 0 ?
 						item_MainMenu_MyMailEmpty :
 						Utils.editHead(item_MainMenu_MyMailEmpty, -1, "&b&lMy Mail", "&7Click to view your mail.~~&7You have " + mailbox.getMailAmount() + " piece" + (mailbox.getMailAmount()==1 ? "" : "s") + " of mail~~&e> Click to open menu!", null));
 				p.openInventory(inv_MainMenu);
 				break;
-			case "Send Mail":
+			case SEND_MAIL:
+				Utils.cout("mail.isSendable(): " + mail.isSendable() + "; recipient: " + recipient);
+				if (mail.isSendable() && recipient != null) {
+					inv_SendMail.setItem(33, item_SendMail_Green);
+				} else {
+					inv_SendMail.setItem(33, item_SendMail_Red);
+				}
 				p.openInventory(inv_SendMail);
 				break;
-			case "My Mail":
+			case MY_MAIL:
 				int i=10;
 				for (LockedMail mail : mailbox.getMailList()) {
 					if ((i+1)%9 == 0) {
@@ -151,19 +169,60 @@ public class Menu implements Listener {
 				}
 				p.openInventory(inv_MyMail);
 				break;
-			case "Settings":
-				p.openInventory(inv_Settings);
+			case SETTINGS:
 				//TODO current skin
+				switch (mailbox.getTexture()) {
+					case DEFAULT:
+						break;
+					case BLUE:
+						break;
+					case GREEN:
+						break;
+					case RED:
+						break;
+					case WHITE:
+						break;
+					default: {}
+				}
+				
+				p.openInventory(inv_Settings);
 				break;
 			default: {
-				Bukkit.getConsoleSender().sendMessage(Utils.colorize("&c[Mailboxes] Menu with the name &4" + title + "&c does not exist!"));
+				Utils.cout("&c[Mailboxes] Menu with the name &4" + menuType.name() + "&c does not exist!");
+				return;
 			}
 		}
-//		currMenu = title;
+		currentMenu = menuType;
+		if (closeTask != null) {
+			closeTask.cancel();
+			closeTask = null;
+			Utils.cout("&aClose Task cancelled.");
+		}
 	}
 	
+	public void reopenMenu() {
+		openInventory(currentMenu);
+	}
+	public void closeMenu() {//TODO check if all included
+		Utils.unregisterListener(this);
+		p.closeInventory();
+		p.sendMessage(Utils.colorize("&eMailboxes menu has been closed."));
+		if (mail.getItemCount() > 0) {
+			p.sendMessage(Utils.colorize("&aYou received back items you stored in the menu:"));
+		}
+		for (int i=0; i<5; ++i) {
+			if (mail.getItems()[i] != null) {
+				ItemStack item = mail.getItems()[i];
+				p.sendMessage(Utils.colorize("&e" + item.getType().name() + "&a x&b" + item.getAmount()));
+				HashMap<Integer,ItemStack> items = p.getInventory().addItem(item);
+				if (!items.isEmpty()) {
+					p.getWorld().dropItem(p.getLocation(), items.values().iterator().next());
+				}
+			}
+		}
+	}
 	private static int slotToMailId(int slot) {
-		return slot - 8 - slot/9*2;
+		return slot-8-slot/9*2;
 	}
 	
 	////////////
@@ -180,14 +239,13 @@ public class Menu implements Listener {
 				case "Mailbox":
 					switch (e.getSlot()) {
 						case 11:
-							mail = new Mail(p);
-							openMenu("Send Mail");
+							openInventory(MenuType.SEND_MAIL);
 							break;
 						case 13:
-							openMenu("My Mail");
+							openInventory(MenuType.MY_MAIL);
 							break;
 						case 15:
-							openMenu("Settings");
+							openInventory(MenuType.SETTINGS);
 							break;
 						default: {}
 					}
@@ -195,21 +253,25 @@ public class Menu implements Listener {
 				case "Send Mail":
 					switch (e.getSlot()) {
 						case 28:
-							//TODO open chat - add message
-							
+							inputType = InputType.MESSAGE;
+							closeInventoryMessage = false;
+							p.closeInventory();
+							p.sendMessage(Utils.colorize("&ePlease enter the mail's message."));
 							break;
 						case 30:
-							//TODO open chat - check offline player - add recipient
+							inputType = InputType.RECIPIENT;
+							closeInventoryMessage = false;
+							p.closeInventory();
+							p.sendMessage(Utils.colorize("&ePlease enter the mail's recipient."));
 							break;
 						case 33:
-							//TODO check
-							// recipient set?
-							// message or items set?
-							
+							if (e.getCurrentItem() == item_SendMail_Green) {
+								MailboxManager.sendMail(mail, recipient.getUniqueId());
+								openInventory(MenuType.MAIN_MENU);
+							}
 							break;
 						case 44:
-							mail = null;//TODO reset storage pointer?
-							openMenu("Mailbox");
+							openInventory(MenuType.MAIN_MENU);
 							break;
 						default: {}
 					}	
@@ -217,11 +279,35 @@ public class Menu implements Listener {
 				case "My Mail":
 					switch (e.getSlot()) {
 						case 53:
-							openMenu("Mailbox");
+							openInventory(MenuType.MAIN_MENU);
 							break;
 						default: {
-							if (e.getSlot()>=10 && e.getSlot()<=34 && e.getSlot()%9!=0 && e.getSlot()%9!=8) {
-								//TODO open the mail
+							if (e.getSlot()>=10 && e.getSlot()<=34 && e.getSlot()%9!=0 && e.getSlot()%9!=8 && e.getCurrentItem() != null && e.getCurrentItem().getType() != Material.AIR) {
+								LockedMail m = mailbox.getMailList().get(slotToMailId(e.getSlot()));
+								switch (e.getCurrentItem().getType()) {
+									case PAPER:
+										p.sendMessage(Utils.colorize("&aYou opened mail from &b" + m.getSenderName() + "&a. It said:"));
+										p.sendMessage(Utils.colorize("&e" + m.getMessage()));
+										p.closeInventory();
+										break;
+									case STORAGE_MINECART:
+										p.sendMessage(Utils.colorize("&aYou opened mail from &b" + m.getSenderName() + "&a. It said:"));
+										p.sendMessage(Utils.colorize("&e" + m.getMessage()));
+										p.sendMessage(Utils.colorize("&aAnd contained:"));
+										for (int i=0; i<5; ++i) {
+											if (m.getItems()[i] != null) {
+												ItemStack item = m.getItems()[i];
+												p.sendMessage(Utils.colorize("&e" + item.getType().name() + "&a x&b" + item.getAmount()));
+												HashMap<Integer,ItemStack> items = p.getInventory().addItem(item);
+												if (!items.isEmpty()) {
+													p.getWorld().dropItem(p.getLocation(), items.values().iterator().next());
+												}
+											}
+										}
+										p.closeInventory();
+										break;
+									default: {}
+								}
 							}
 						}
 					}
@@ -229,7 +315,7 @@ public class Menu implements Listener {
 				case "Settings":
 					switch (e.getSlot()) {
 						case 44:
-							openMenu("Mailbox");
+							openInventory(MenuType.MAIN_MENU);
 							break;
 						default: {
 							switch (e.getSlot()) {//TODO skins
@@ -242,7 +328,7 @@ public class Menu implements Listener {
 					}
 					break;
 				default: {
-					
+					e.setCancelled(false);
 				}
 			}
 		}
@@ -250,21 +336,43 @@ public class Menu implements Listener {
 	@EventHandler
 	public void onInventoryClose(InventoryCloseEvent e) {
 		if (e.getPlayer().getUniqueId().equals(p.getUniqueId())) {
-			e.getPlayer().openInventory(e.getInventory());//TODO check - put on delay if necessary
+			Utils.cout("&eInventoryCloseEvent triggered!");
+			if (closeInventoryMessage) {
+				p.sendMessage(Utils.colorize("&eType &6/mb&e to reopen the Mailbox GUI or type &6/mb cancel&e to close the menu. It will close automatically in 3 minutes."));
+				closeTask = Bukkit.getScheduler().runTaskLater(Mailboxes2.getInstance(), new Runnable() {
+					public void run() {
+						MenuHandler.closeMenu(p);
+					}}, 20*180L);
+			} else {
+				closeInventoryMessage = true;
+				Utils.cout("&acloseInventoryMessage = true!");
+			}
 		}
 	}
+	@SuppressWarnings("deprecation")
 	@EventHandler
 	public void onPlayerChat(AsyncPlayerChatEvent e) {
 		if (e.getPlayer().getUniqueId().equals(p.getUniqueId())) {
+			e.setCancelled(true);
 			switch (inputType) {
 				case MESSAGE:
 					mail.setMessage(e.getMessage());
-					reopenInventory = true;
+					inv_SendMail.setItem(28, Utils.editItem(item_SendMail_AddMessage, null, -1, "", "&7" + e.getMessage() + "~~&e> Click to edit text!", -1));
+					inputType = InputType.NONE;
+					closeInventoryMessage = true;
+					p.openInventory(inv_SendMail);
 					break;
-				case RECEIPIENT:
-					
-					
-					
+				case RECIPIENT:
+					OfflinePlayer op = Bukkit.getOfflinePlayer(e.getMessage());
+					if (op == null) {
+						p.sendMessage(Utils.colorize("&4Specified player doesn't exist! Please enter a correct playername or type /cancel to cancel."));
+					} else {
+						recipient = op;
+						inv_SendMail.setItem(30, Utils.editHead(item_SendMail_SpecifyRecipient_Template, -1, "", "&7Recipient:&f " + recipient + "~~&e> Click to edit recipient!", op.getName()));
+						inputType = InputType.NONE;
+						closeInventoryMessage = true;
+						p.openInventory(inv_SendMail);
+					}
 					break;
 				default: {}
 			}
@@ -273,7 +381,15 @@ public class Menu implements Listener {
 	@EventHandler
 	public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent e) {
 		if (e.getPlayer().getUniqueId().equals(p.getUniqueId())) {
-			
+			switch (e.getMessage()) {
+				case "/cancel":
+					e.setCancelled(true);
+					inputType = InputType.NONE;
+					closeInventoryMessage = false;
+					p.openInventory(inv_SendMail);
+					break;
+				default: {}
+			}
 		}
 	}
 }
