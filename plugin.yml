@@ -4,6 +4,6 @@ author: RandomPersson
 main: net.nDARQ.RandomPersson.Mailboxes.Mailboxes2
 commands:
   mailbox:
-    description: random description
+    description: Open your mailbox!
     aliases: [mb, mailboxes]
     permission: mailboxes.use

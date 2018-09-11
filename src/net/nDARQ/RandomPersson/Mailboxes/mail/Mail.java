@@ -14,8 +14,8 @@ public class Mail extends LockedMail {
 	public Mail(UUID senderUUID, String senderName) {
 		this.senderUUID = senderUUID;
 		this.senderName = senderName;
-		this.storagePointer = -1L;//TODO (?)
-		this.items = new ItemStack[6];
+		this.storagePointer = -1L;
+		this.items = new ItemStack[5];
 		this.sentDate = System.currentTimeMillis();
 		this.expDate = MailUtils.getStandardExpDate(sentDate);
 	}
@@ -43,9 +43,6 @@ public class Mail extends LockedMail {
 		return false;
 	}
 	public void removeItem(int id) {
-		for (int i=id; i<5; ++i) {
-			
-		}
 		this.items[id] = null;
 	}
 	public void overwriteItems(ItemStack[] items) {

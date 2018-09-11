@@ -1,5 +1,10 @@
 package net.nDARQ.RandomPersson.Mailboxes;
 
+import java.util.concurrent.CompletableFuture;
+
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -12,21 +17,30 @@ import net.nDARQ.RandomPersson.Mailboxes.utils.Utils;
 public class Mailboxes2 extends JavaPlugin implements CommandExecutor {
 	private static JavaPlugin instance;
 	
-	
-	
 	public void onEnable() {
 		instance = this;
-		getConfig().options().copyDefaults(true);
 		Config.createMailboxFolder();
-//		Utils.init();//TODO (?)
+		getConfig().options().copyDefaults(true);
 		Utils.registerListener(new MailboxManager());
 		
-		//TODO create chests (async)
+		String storageWorldName = getConfig().getString("storageWorld");
+		World storageWorld = Bukkit.getWorld(storageWorldName);
+		if (storageWorld == null) {
+			Utils.cout("&4Disabling Mailboxes - Couldn't find storage world (&c" + storageWorldName + "&4)specified in the config!");
+			getServer().getPluginManager().disablePlugin(this);
+			return;
+		}
+		int storageX = getConfig().getInt("storageX"), storageZ = getConfig().getInt("storageZ");
+		
+		CompletableFuture.supplyAsync(() -> {MailboxManager.createChests((new Location(storageWorld, storageX, 0, storageZ)).getBlock()); return true;});
+	}
+	
+	public void onDisable() {
+		MailboxManager.saveAndCloseAllMailboxes();
 	}
 	
 	public static JavaPlugin getInstance() {
 		return instance;
-		//TODO save all mailboxes
 	}
 	
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
@@ -50,70 +64,3 @@ public class Mailboxes2 extends JavaPlugin implements CommandExecutor {
 	}
 	
 }
-
-/*
-public static long storeItems(ItemStack[] items) {
-	if (Utils.isEmpty(items)) {
-		return -1;
-	}
-	
-	for (long i=0; !isPointerFree(currentStoragePointer); ++i) {
-		if (i >= storageCapacity) {
-			return -2;
-		}
-		++currentStoragePointer;
-	}
-	
-	Inventory inv = getContainer(currentStoragePointer);
-	int slot0 = getItemSlot(currentStoragePointer);
-	for (int i=0; i<5; ++i) {
-		inv.setItem(slot0 + i, items[i]);
-	}
-	
-	return currentStoragePointer;
-}
-public static ItemStack[] getStorage(long storagePointer) {
-	ItemStack[] items = new ItemStack[5];
-	if (storagePointer<0) {
-		return items;
-	}
-	
-	Inventory inv = getContainer(storagePointer);
-	int slot0 = getItemSlot(storagePointer);
-	for (int i=0; i<5; ++i) {
-		items[i] = inv.getItem(slot0 + i);
-	}
-	
-	return items;
-}
-public static void clearStorage(long storagePointer) {
-	if (storagePointer<0 || storagePointer>storageCapacity) {
-		return;
-	}
-	
-	Inventory inv = getContainer(storagePointer);
-	int slot0 = getItemSlot(storagePointer);
-	for (int i=0; i<5; ++i) {
-		inv.setItem(slot0 + i, null);
-	}
-}
-public static boolean isPointerFree(long storagePointer) {
-	return getContainer(storagePointer).getItem(getItemSlot(storagePointer)) == null;
-}
-public static long getPointer(Block chest, int packageID) {
-	return packageID + chest.getY()*5 + chest.getX()*5*256 + chest.getZ()*5*256*10;
-	//             5 +          256*5 +           10*5*256 +           10*5*256*10
-	//5pc
-	//256y
-	//10x
-	//10z
-}
-private static Inventory getContainer(long storagePointer) {
-	Chest c = (Chest)chest0.getRelative((int)(storagePointer%(5*256*10)/(5*256)), (int)(storagePointer%(5*256)/5), (int)(storagePointer/(5*256*10))).getState();
-	c.update(true);
-	return c.getInventory();
-}
-private static int getItemSlot(long storagePointer) {
-	return (int)(storagePointer%5)*5;
-}
-*/

@@ -19,19 +19,19 @@ public class Config {
 	public static void createMailboxFolder() {
 		mailboxFolder.mkdirs();
 	}
-	public static YamlConfiguration getDefaultConfig() {
+	public static YamlConfiguration getDefaultPlayerConfig() {
 		YamlConfiguration conf = new YamlConfiguration();
 		conf.set("texture", "DEFAULT");
 		conf.set("mail", new HashMap<String,Object>());
 		
 		return conf;
 	}
-	public static YamlConfiguration getConfig(UUID uuid) {
+	public static YamlConfiguration getPlayerConfig(UUID uuid) {
 		File mailboxFile = new File(mailboxFolder, uuid.toString()+".mailbox");
 		if (!mailboxFile.exists()) {
 			try {
 				mailboxFile.createNewFile();
-				YamlConfiguration conf = getDefaultConfig();
+				YamlConfiguration conf = getDefaultPlayerConfig();
 				conf.save(mailboxFile);
 				return conf;
 			}
@@ -42,7 +42,7 @@ public class Config {
 		YamlConfiguration conf = YamlConfiguration.loadConfiguration(mailboxFile);		
 		return conf;
 	}
-	public static synchronized boolean saveConfig(UUID uuid, YamlConfiguration conf) {
+	public static synchronized boolean savePlayerConfig(UUID uuid, YamlConfiguration conf) {
 		File mailboxFile = new File(mailboxFolder, uuid.toString()+".mailbox");
 		mailboxFile.getParentFile().mkdirs();
 		try {
@@ -56,7 +56,7 @@ public class Config {
 //		Mailboxes2.getInstance().saveConfig();
 		return true;
 	}
-	public static void deleteConfig(UUID uuid) {
+	public static void deletePlayerConfig(UUID uuid) {
 		File mailboxFile = new File(mailboxFolder, uuid.toString()+".mailbox");
 		
 		if (mailboxFile.exists()) mailboxFile.delete();

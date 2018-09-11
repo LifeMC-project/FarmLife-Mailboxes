@@ -209,14 +209,14 @@ public class Menu implements Listener {
 		p.sendMessage(Utils.colorize("&eMailboxes menu has been closed."));
 		if (mail.getItemCount() > 0) {
 			p.sendMessage(Utils.colorize("&aYou received back items you stored in the menu:"));
-		}
-		for (int i=0; i<5; ++i) {
-			if (mail.getItems()[i] != null) {
-				ItemStack item = mail.getItems()[i];
-				p.sendMessage(Utils.colorize("&e" + item.getType().name() + "&a x&b" + item.getAmount()));
-				HashMap<Integer,ItemStack> items = p.getInventory().addItem(item);
-				if (!items.isEmpty()) {
-					p.getWorld().dropItem(p.getLocation(), items.values().iterator().next());
+			for (int i=0; i<5; ++i) {
+				if (mail.getItems()[i] != null) {
+					ItemStack item = mail.getItems()[i];
+					p.sendMessage(Utils.colorize("&e" + item.getType().name() + "&a x&b" + item.getAmount()));
+					HashMap<Integer,ItemStack> items = p.getInventory().addItem(item);
+					if (!items.isEmpty()) {
+						p.getWorld().dropItem(p.getLocation(), items.values().iterator().next());
+					}
 				}
 			}
 		}

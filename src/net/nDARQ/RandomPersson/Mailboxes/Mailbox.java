@@ -31,10 +31,10 @@ public class Mailbox {
 	private final UUID uuid;
 	private final ArrayList<LockedMail> mailList = new ArrayList<LockedMail>();
 	private Texture texture = Texture.DEFAULT;
-	private int capacity = 27; // TODO from config
+	private int capacity = 27;
 	
 	public Mailbox(UUID uuid) {
-		this.uuid = uuid;
+		this(uuid, 27);
 	}
 	public Mailbox(UUID uuid, int capacity) {
 		this.uuid = uuid;
