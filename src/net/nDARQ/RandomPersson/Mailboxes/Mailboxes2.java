@@ -1,7 +1,5 @@
 package net.nDARQ.RandomPersson.Mailboxes;
 
-import java.util.concurrent.CompletableFuture;
-
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -18,25 +16,37 @@ public class Mailboxes2 extends JavaPlugin implements CommandExecutor {
 	private static JavaPlugin instance;
 	
 	public void onEnable() {
+		getConfig().options().copyDefaults(true);
+		saveConfig();
+		
 		instance = this;
 		Config.createMailboxFolder();
-		getConfig().options().copyDefaults(true);
 		Utils.registerListener(new MailboxManager());
 		
 		String storageWorldName = getConfig().getString("storageWorld");
-		World storageWorld = Bukkit.getWorld(storageWorldName);
+		final World storageWorld = Bukkit.getWorld(storageWorldName);
 		if (storageWorld == null) {
-			Utils.cout("&4Disabling Mailboxes - Couldn't find storage world (&c" + storageWorldName + "&4)specified in the config!");
+			Utils.cout("&4Disabling Mailboxes - Couldn't find storage world (&c" + storageWorldName + "&4) specified in the config!");
 			getServer().getPluginManager().disablePlugin(this);
 			return;
 		}
-		int storageX = getConfig().getInt("storageX"), storageZ = getConfig().getInt("storageZ");
+		final int storageX = getConfig().getInt("storageX"), storageZ = getConfig().getInt("storageZ");
+		Utils.cout("&a" + storageWorldName + ": " + storageX + " " + storageZ);
 		
-		CompletableFuture.supplyAsync(() -> {MailboxManager.createChests((new Location(storageWorld, storageX, 0, storageZ)).getBlock()); return true;});
+		Bukkit.getScheduler().runTaskLater(this, new Runnable() {
+			public void run() {
+				Utils.cout("&aStarting createStorage(...)...");
+				StorageManager.createStorage((new Location(storageWorld, storageX, 0, storageZ)).getBlock());
+				Utils.cout("&arun() finished");
+			}
+		}, 0L);
+		Utils.cout("&aReloading mailboxes..");
+		MailboxManager.reloadAllMailboxes();
+		Utils.cout("&aMailboxes reloaded!");
 	}
 	
 	public void onDisable() {
-		MailboxManager.saveAndCloseAllMailboxes();
+		MailboxManager.saveAllMailboxes();
 	}
 	
 	public static JavaPlugin getInstance() {
@@ -47,17 +57,21 @@ public class Mailboxes2 extends JavaPlugin implements CommandExecutor {
 		if (sender instanceof Player) {
 			Player p = (Player)sender;
 			
-			if (args.length > 0 && args[0].equalsIgnoreCase("cancel")) {
-				MenuHandler.closeMenu(p);
+			if (args.length > 0) {
+				if (args[0].equalsIgnoreCase("close")) {
+					MenuHandler.closeMenu(p);
+				} else if (args[0].equalsIgnoreCase("test")) {
+					String storageWorldName = getConfig().getString("storageWorld");
+					final World storageWorld = Bukkit.getWorld(storageWorldName);
+					final int storageX = getConfig().getInt("storageX"), storageZ = getConfig().getInt("storageZ");
+					StorageManager.createStorage((new Location(storageWorld, storageX, 0, storageZ)).getBlock());
+				}
 			} else {
 				MenuHandler.openMenu(p);
 			}
-			
-//			Block block = ((Player)sender).getLocation().getBlock();
-//			Utils.createSkull(block, Mailbox.Texture.DEFAULT.getCode());
 		}
 		else {
-			
+			Utils.cout("&cThis command can only be used from in-game!");
 		}
 		
 		return true;

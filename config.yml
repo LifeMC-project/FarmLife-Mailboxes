@@ -1,3 +1,4 @@
 storageWorld: mailboxStorage
 storageX: 1000000
 storageZ: 1000000
+debugLevel: 0

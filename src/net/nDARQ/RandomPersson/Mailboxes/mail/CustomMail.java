@@ -4,7 +4,7 @@ import java.util.UUID;
 
 import org.bukkit.entity.HumanEntity;
 
-import net.nDARQ.RandomPersson.Mailboxes.MailboxManager;
+import net.nDARQ.RandomPersson.Mailboxes.StorageManager;
 
 public class CustomMail extends Mail {
 
@@ -16,7 +16,7 @@ public class CustomMail extends Mail {
 		this.message = message;
 		if (storagePointer > 0) {
 			this.storagePointer = storagePointer;
-			this.items = MailboxManager.getItems(storagePointer);
+			this.items = StorageManager.getItems(storagePointer);
 		}
 		if (sentDate >= 0) this.sentDate = sentDate;
 		if (expDate >= 0) this.expDate = expDate;

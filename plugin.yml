@@ -2,8 +2,9 @@ name: Mailboxes
 version: 0.0
 author: RandomPersson
 main: net.nDARQ.RandomPersson.Mailboxes.Mailboxes2
+depend: [Multiverse-Core]
 commands:
   mailbox:
-    description: Open your mailbox!
+    description: Open mailbox menu
     aliases: [mb, mailboxes]
     permission: mailboxes.use

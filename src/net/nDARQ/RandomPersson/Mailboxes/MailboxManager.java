@@ -6,26 +6,21 @@ import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-import org.bukkit.Material;
-import org.bukkit.block.Block;
-import org.bukkit.block.Chest;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
 
 import net.nDARQ.RandomPersson.Mailboxes.Mailbox.Texture;
 import net.nDARQ.RandomPersson.Mailboxes.mail.CustomMail;
 import net.nDARQ.RandomPersson.Mailboxes.mail.Mail;
+import net.nDARQ.RandomPersson.Mailboxes.utils.Utils;
 
 public class MailboxManager implements Listener {
 	private static final HashMap<UUID,Mailbox> loadedMailboxes = new HashMap<UUID,Mailbox>();
-	private static Block packageStorage;
-	private static long currentStoragePointer = 1L;
 	
 	///////////////
 	// MAILBOXES //
@@ -34,23 +29,31 @@ public class MailboxManager implements Listener {
 		return loadedMailboxes.get(uuid);
 	}
 	
-	private static boolean loadMailbox(UUID uuid) {
+	private static synchronized boolean loadMailbox(UUID uuid) {
+		Utils.cout("&eLoading mailbox for " + uuid.toString() + "...");
 		YamlConfiguration conf = Config.getPlayerConfig(uuid);
+		Utils.cout("&eOpened config");
 		Mailbox mailbox = new Mailbox(uuid);
+		Utils.cout("&eCreated mailbox");
 		mailbox.setTexture(Texture.value(conf.getString("texture")));
+		Utils.cout("&eLoaded texture");
 		conf.getMapList("mail").stream().forEach(map -> {
-			mailbox.addMail(new CustomMail(UUID.fromString((String)map.get("sender")),
+			Utils.cout("&aLoading a mail");
+			Utils.cout(map.get("senderUUID") + " " + map.get("message") + " " + map.get("senderName") + " " + map.get("storagePointer") + " " + map.get("sentDate") + " " + map.get("expDate"));
+			mailbox.addMail(new CustomMail(UUID.fromString((String)map.get("senderUUID")),
 					(String)map.get("senderName"),
 					(String)map.get("message"),
 					((Number)map.get("storagePointer")).longValue(),
 					((Number)map.get("sentDate")).longValue(),
 					((Number)map.get("expDate")).longValue()));
+			Utils.cout(map.get("&aCreated a CustomMail"));
 		});
 		
 		loadedMailboxes.put(uuid, mailbox);
+		Utils.cout("&eMailbox loaded.");
 		return true;
 	}
-	private static boolean saveMailbox(UUID uuid) {
+	private static synchronized boolean saveMailbox(UUID uuid) {
 		Mailbox mailbox = loadedMailboxes.get(uuid);
 		YamlConfiguration conf = Config.getPlayerConfig(mailbox.getUUID());
 		
@@ -71,112 +74,50 @@ public class MailboxManager implements Listener {
 		
 		return Config.savePlayerConfig(mailbox.getUUID(), conf);
 	}
-	private static void unloadMailbox(UUID uuid) {
+	private static synchronized void unloadMailboxWithoutSaving(UUID uuid) {
 		loadedMailboxes.remove(uuid);
 	}
-	public static void saveAndCloseAllMailboxes() {
+	public static void saveAllMailboxes() {
+		loadedMailboxes.keySet().stream().forEach(mb -> saveMailbox(mb));
+	}
+	public static void reloadAllMailboxes() {
+		Utils.cout("&aSaving all mailboxes..");
+		saveAllMailboxes();
+		Utils.cout("&aCreating iterator..");
 		Iterator<UUID> it = loadedMailboxes.keySet().stream().iterator();
+		Utils.cout("&aClearing loaded mailboxes list");
 		while (it.hasNext()) {
-			saveMailbox(it.next());
+			loadedMailboxes.remove(it.next());
 		}
+		
+		final CompletableFuture<Void> cf = CompletableFuture.completedFuture(null);
+		Utils.cout("&aLoading mailboxes back..");
+		Bukkit.getOnlinePlayers().stream().map(p -> p.getUniqueId()).forEach(uuid -> cf.thenRunAsync(new Runnable() {
+			public void run() {
+				Utils.cout("&eLoading mailbox " + uuid.toString());
+				loadMailbox(uuid);
+				Utils.cout("&aLoaded!");
+			}
+		}));
+		Utils.cout("reloadAllMailboxes() finished!");
 	}
 	
 	// MAIL
-	public static synchronized boolean sendMail(Mail mail, UUID recipientUUID) {
+	public static boolean sendMail(Mail mail, UUID recipientUUID) {
 		Mailbox mb = getMailbox(recipientUUID);
 		boolean mailboxUnloaded = mb == null;
 		if (mailboxUnloaded) {
 			loadMailbox(recipientUUID);
 			mb = getMailbox(recipientUUID);
 		}
-		if (!mb.addMail(mail.getItemCount() > 0 ? mail.lock(getNextStoragePointer()) : mail.lock(-1L))) {
+		if (!mb.addMail(mail.getItemCount() > 0 ? mail.lock(StorageManager.getNextStoragePointer()) : mail.lock(-1L))) {
 			return false;
 		}
 		saveMailbox(recipientUUID);
 		if (mailboxUnloaded) {
-			unloadMailbox(recipientUUID);
+			unloadMailboxWithoutSaving(recipientUUID);
 		}
 		return true;
-	}
-	
-	/////////////
-	// STORAGE //
-	/////////////
-	private static final int bsize=2, sizex=32, sizez=32, sizey=256-bsize*2, perchest=5;
-	private static final int storageCapacity = sizex*sizez*sizey*perchest;
-	static void createChests(Block zero) {
-		zero = zero.getRelative(0, -zero.getY(), 0);
-		packageStorage = zero.getRelative(0, bsize, 0);
-		for (int y=0; y<256; ++y) {
-			for (int x=-bsize; x<sizex+bsize; ++x) {
-				for (int z=-bsize; z<sizez+bsize; ++z) {
-					Block b = zero.getRelative(x, y, z);
-					if (x<0 || z<0 || x>=sizex || z>=sizez || y<bsize || y>=sizey+bsize) {
-						b.setType(Material.BARRIER);
-					} else if (b.getType() != Material.CHEST) {
-						b.setType(Material.CHEST);
-					}
-				}
-			}
-		}
-	}
-	
-	// ITEMS
-	public static synchronized void setItems(long storagePointer, ItemStack[] items) {
-		Inventory container = getContainer(storagePointer).getInventory();
-		int slot = getItemSlot(storagePointer);
-		for (int i=0; i<5; ++i) {
-			container.setItem(slot+i, items[i]);
-		}
-	}
-	public static synchronized ItemStack[] getItems(long storagePointer) {
-		ItemStack[] items = new ItemStack[5];
-		Inventory container = getContainer(storagePointer).getInventory();
-		int slot = getItemSlot(storagePointer);
-		for (int i=0; i<5; ++i) {
-			items[i] = container.getItem(slot+i);
-		}
-		return items;
-	}
-	public static synchronized void removeItems(long storagePointer) {
-		Inventory container = getContainer(storagePointer).getInventory();
-		int slot = getItemSlot(storagePointer);
-		for (int i=0; i<5; ++i) {
-			container.setItem(slot+i, null);
-		}
-		if (storagePointer < currentStoragePointer) {
-			currentStoragePointer = storagePointer;
-		}
-	}
-	
-	// POINTERS
-	private static synchronized long getNextStoragePointer() {
-		while (!isPointerFree(currentStoragePointer)) ++currentStoragePointer;
-		return currentStoragePointer>storageCapacity ? -1L : currentStoragePointer;
-	}
-	private static boolean isPointerFree(long storagePointer) {
-		Inventory inv = getContainer(storagePointer).getInventory();
-		int slot = getItemSlot(storagePointer);
-		for (int i=0; i<5; ++i) {
-			if (inv.getItem(slot+i) != null) return false;
-		}
-		return true;
-	}
-	private static Chest getContainer(long storagePointer) {
-		storagePointer = storagePointer/perchest;
-		long x = storagePointer%sizex;
-		storagePointer = storagePointer/sizex;
-		long z = storagePointer%sizez;
-		storagePointer = storagePointer/sizez;
-		long y = storagePointer%sizey;
-		storagePointer = storagePointer/sizey;
-		
-		Chest c = (Chest)packageStorage.getRelative((int)x, (int)y, (int)z).getState();
-		c.update(true);// loads the chunk
-		return c;
-	}
-	private static int getItemSlot(long storagePointer) {
-		return (int)(storagePointer%perchest)*perchest;
 	}
 	
 	////////////
@@ -188,6 +129,6 @@ public class MailboxManager implements Listener {
 	}
 	@EventHandler(priority=EventPriority.LOWEST)
 	public void onPlayerQuit(PlayerQuitEvent e) {
-		CompletableFuture.supplyAsync(() -> saveMailbox(e.getPlayer().getUniqueId())).thenRun(() -> unloadMailbox(e.getPlayer().getUniqueId()));
+		CompletableFuture.supplyAsync(() -> saveMailbox(e.getPlayer().getUniqueId())).thenRun(() -> unloadMailboxWithoutSaving(e.getPlayer().getUniqueId()));
 	}
 }

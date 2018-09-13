@@ -42,6 +42,11 @@ public class Mail extends LockedMail {
 		}
 		return false;
 	}
+	public boolean setItem(int slot, ItemStack item) {
+		boolean ret = this.items[slot] != null;
+		this.items[slot] = item;
+		return ret;
+	}
 	public void removeItem(int id) {
 		this.items[id] = null;
 	}
