@@ -1,5 +1,6 @@
 name: Mailboxes
 version: 0.0
+load: POSTWORLD
 author: RandomPersson
 main: net.nDARQ.RandomPersson.Mailboxes.Mailboxes2
 depend: [Multiverse-Core]
@@ -8,3 +9,10 @@ commands:
     description: Open mailbox menu
     aliases: [mb, mailboxes]
     permission: mailboxes.use
+permissions:
+  mailboxes.open:
+    description: Allows you to open and use your Mailbox.
+    default: true
+  mailboxes.admin:
+    description: Allan, please add details.
+    default: false

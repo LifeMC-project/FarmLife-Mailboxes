@@ -30,7 +30,7 @@ public class MailboxManager implements Listener {
 	}
 	
 	private static synchronized boolean loadMailbox(UUID uuid) {
-		Utils.cout("&eLoading mailbox for " + uuid.toString() + "...");
+		Utils.cout("&eLoading mailbox " + uuid.toString() + "...");
 		YamlConfiguration conf = Config.getPlayerConfig(uuid);
 		Utils.cout("&eOpened config");
 		Mailbox mailbox = new Mailbox(uuid);
@@ -39,7 +39,7 @@ public class MailboxManager implements Listener {
 		Utils.cout("&eLoaded texture");
 		conf.getMapList("mail").stream().forEach(map -> {
 			Utils.cout("&aLoading a mail");
-			Utils.cout(map.get("senderUUID") + " " + map.get("message") + " " + map.get("senderName") + " " + map.get("storagePointer") + " " + map.get("sentDate") + " " + map.get("expDate"));
+			Utils.cout("&5" + map.get("senderUUID") + " &d" + map.get("message") + " &5" + map.get("senderName") + " &d" + map.get("storagePointer") + " &5" + map.get("sentDate") + " &d" + map.get("expDate"));
 			mailbox.addMail(new CustomMail(UUID.fromString((String)map.get("senderUUID")),
 					(String)map.get("senderName"),
 					(String)map.get("message"),
@@ -50,7 +50,7 @@ public class MailboxManager implements Listener {
 		});
 		
 		loadedMailboxes.put(uuid, mailbox);
-		Utils.cout("&eMailbox loaded.");
+		Utils.cout("&aMailbox loaded.");
 		return true;
 	}
 	private static synchronized boolean saveMailbox(UUID uuid) {
@@ -81,25 +81,18 @@ public class MailboxManager implements Listener {
 		loadedMailboxes.keySet().stream().forEach(mb -> saveMailbox(mb));
 	}
 	public static void reloadAllMailboxes() {
-		Utils.cout("&aSaving all mailboxes..");
 		saveAllMailboxes();
-		Utils.cout("&aCreating iterator..");
 		Iterator<UUID> it = loadedMailboxes.keySet().stream().iterator();
-		Utils.cout("&aClearing loaded mailboxes list");
 		while (it.hasNext()) {
 			loadedMailboxes.remove(it.next());
 		}
 		
 		final CompletableFuture<Void> cf = CompletableFuture.completedFuture(null);
-		Utils.cout("&aLoading mailboxes back..");
 		Bukkit.getOnlinePlayers().stream().map(p -> p.getUniqueId()).forEach(uuid -> cf.thenRunAsync(new Runnable() {
 			public void run() {
-				Utils.cout("&eLoading mailbox " + uuid.toString());
 				loadMailbox(uuid);
-				Utils.cout("&aLoaded!");
 			}
 		}));
-		Utils.cout("reloadAllMailboxes() finished!");
 	}
 	
 	// MAIL

@@ -3,6 +3,7 @@ package net.nDARQ.RandomPersson.Mailboxes;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -33,13 +34,8 @@ public class Mailboxes2 extends JavaPlugin implements CommandExecutor {
 		final int storageX = getConfig().getInt("storageX"), storageZ = getConfig().getInt("storageZ");
 		Utils.cout("&a" + storageWorldName + ": " + storageX + " " + storageZ);
 		
-		Bukkit.getScheduler().runTaskLater(this, new Runnable() {
-			public void run() {
-				Utils.cout("&aStarting createStorage(...)...");
-				StorageManager.createStorage((new Location(storageWorld, storageX, 0, storageZ)).getBlock());
-				Utils.cout("&arun() finished");
-			}
-		}, 0L);
+		StorageManager.createStorage((new Location(storageWorld, storageX, 0, storageZ)).getBlock());
+		
 		Utils.cout("&aReloading mailboxes..");
 		MailboxManager.reloadAllMailboxes();
 		Utils.cout("&aMailboxes reloaded!");
@@ -56,25 +52,38 @@ public class Mailboxes2 extends JavaPlugin implements CommandExecutor {
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (sender instanceof Player) {
 			Player p = (Player)sender;
-			
 			if (args.length > 0) {
+				switch (args[0].toLowerCase()) {
+					case "close":
+						MenuHandler.closeMenu(p);
+						break;
+					case "test":
+						break;
+					case "storagedump":
+						StorageManager.dumpStorage();
+						p.sendMessage(Utils.colorize("&aStorage dumped into console."));
+						break;
+					case "getzero":
+						Block b = StorageManager.getZero();
+						p.sendMessage(Utils.colorize("&5Storage block zero is at &d" + b.getX() + " " + b.getY() + " " + b.getZ()));
+						break;
+					default: {}
+				}
 				if (args[0].equalsIgnoreCase("close")) {
 					MenuHandler.closeMenu(p);
 				} else if (args[0].equalsIgnoreCase("test")) {
-					String storageWorldName = getConfig().getString("storageWorld");
-					final World storageWorld = Bukkit.getWorld(storageWorldName);
-					final int storageX = getConfig().getInt("storageX"), storageZ = getConfig().getInt("storageZ");
-					StorageManager.createStorage((new Location(storageWorld, storageX, 0, storageZ)).getBlock());
 				}
 			} else {
 				MenuHandler.openMenu(p);
 			}
 		}
 		else {
-			Utils.cout("&cThis command can only be used from in-game!");
+			if (args.length > 0 && args[0].equalsIgnoreCase("storagedump")) {
+				StorageManager.dumpStorage();
+			} else {
+				Utils.cout("&cThis command can only be used from in-game!");
+			}
 		}
-		
 		return true;
 	}
-	
 }

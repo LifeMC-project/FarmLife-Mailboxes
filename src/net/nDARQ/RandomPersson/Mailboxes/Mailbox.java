@@ -72,7 +72,12 @@ public class Mailbox {
 		return false;
 	}
 	public boolean removeMail(int id) {
-		return this.mailList.remove(id) != null;
+		LockedMail mail = this.mailList.remove(id);
+		if (mail != null) {
+			StorageManager.removeItems(mail.getStoragePointer());
+			return true;
+		}
+		return false;
 	}
 	public void setCapacity(int capacity) {
 		this.capacity = capacity;
