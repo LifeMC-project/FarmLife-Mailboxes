@@ -150,7 +150,7 @@ public class Utils {
 	}
 	// EDIT ITEM //
 	public static ItemStack editItem(ItemStack item, Material material, int count, String name, String lore, int color) {
-		return editItem(item, material, count, name==null||name==""?null:colorize(name), lore=="" ? null : Arrays.asList(colorize(lore).split("~")), color);
+		return editItem(item, material, count, name==null||name=="" ? null : colorize(name), lore==null||lore=="" ? null : Arrays.asList(colorize(lore).split("~")), color);
 	}
 	@SuppressWarnings("deprecation")
 	public static ItemStack editItem(ItemStack item, Material material, int count, String name, List<String> lore, int color) {
