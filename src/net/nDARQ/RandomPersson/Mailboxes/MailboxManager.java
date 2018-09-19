@@ -46,7 +46,7 @@ public class MailboxManager implements Listener {
 					((Number)map.get("storagePointer")).longValue(),
 					((Number)map.get("sentDate")).longValue(),
 					((Number)map.get("expDate")).longValue()));
-			Utils.cout(map.get("&aCreated a CustomMail"));
+			Utils.cout("&aCreated a CustomMail");
 		});
 		
 		loadedMailboxes.put(uuid, mailbox);
@@ -103,9 +103,14 @@ public class MailboxManager implements Listener {
 			loadMailbox(recipientUUID);
 			mb = getMailbox(recipientUUID);
 		}
-		if (!mb.addMail(mail.getItemCount() > 0 ? mail.lock(StorageManager.getNextStoragePointer()) : mail.lock(-1L))) {
+		long storagePointer = mail.getItemCount()>0 ? StorageManager.getNextStoragePointer() : -1L;
+		if (storagePointer == -2L) {
 			return false;
 		}
+		if (!mb.addMail(mail.lock(StorageManager.getNextStoragePointer()))) {
+			return false;
+		}
+		StorageManager.setItems(storagePointer, mail.getItems());
 		saveMailbox(recipientUUID);
 		if (mailboxUnloaded) {
 			unloadMailboxWithoutSaving(recipientUUID);

@@ -75,8 +75,12 @@ public class StorageManager {
 	
 	// POINTERS
 	static synchronized long getNextStoragePointer() {
-		while (!isPointerFree(currentStoragePointer)) ++currentStoragePointer;
-		return currentStoragePointer>storageCapacity ? -1L : currentStoragePointer;
+		while (!isPointerFree(currentStoragePointer)) {
+			if (++currentStoragePointer >= storageCapacity) {
+				return -2L;
+			}
+		}
+		return currentStoragePointer;
 	}
 	private static boolean isPointerFree(long storagePointer) {
 		Inventory inv = getContainer(storagePointer).getInventory();
@@ -111,13 +115,13 @@ public class StorageManager {
 		Utils.cout("&5Dumping storage into console..");
 		for (long p=0; p<storageCapacity; ++p) {
 			if (!isPointerFree(p)) {
-				p = p/percont;
-				long x = p%sizex;
-				p = p/sizex;
+				long pp = p/percont;
+				long x = pp%sizex;
+				pp = pp/sizex;
 				long z = p%sizez;
-				p = p/sizez;
+				pp = pp/sizez;
 				long y = p%sizey;
-				p = p/sizey;
+				pp = pp/sizey;
 				
 				Container container = (Container)packageStorage.getRelative((int)x, (int)y, (int)z).getState();
 				container.update(true);

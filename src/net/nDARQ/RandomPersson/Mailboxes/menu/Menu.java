@@ -158,7 +158,6 @@ public class Menu implements Listener {
 					CompletableFuture.supplyAsync(() -> {MenuHandler.closeMenu(p); return true;});
 					return;
 				}
-				Utils.cout("&e"+mailbox.getMailAmount());
 				inv_MainMenu.setItem(13, mailbox.getMailAmount()>0 ?
 						Utils.editHead(item_MainMenu_MyMailEmpty, -1, "&b&lMy Mail", "&7Click to view your mail.~~&7You have " + mailbox.getMailAmount() + " piece" + (mailbox.getMailAmount()==1 ? "" : "s") + " of mail~~&e> Click to open menu!", null) :
 						item_MainMenu_MyMailEmpty);
@@ -219,13 +218,12 @@ public class Menu implements Listener {
 		if (closeTask != null) {
 			closeTask.cancel();
 			closeTask = null;
-			Utils.cout("&aClose Task cancelled.");//TODO remove debug
 		}
+		closeInventoryMessage = true;
 	}
 	
 	public void reopenMenu() {
 		openInventory(currentMenu);
-		closeInventoryMessage = true;
 	}
 	public void closeMenu() {
 		Utils.unregisterListener(this);
@@ -294,22 +292,28 @@ public class Menu implements Listener {
 						case 28:
 							inputType = InputType.MESSAGE;
 							openInput();
-							p.sendMessage(Utils.colorize("&ePlease enter the mail's message."));
+							p.sendMessage(Utils.colorize("&aPlease enter the mail's message."));
 							break;
 						case 30:
 							inputType = InputType.RECIPIENT;
 							openInput();
-							p.sendMessage(Utils.colorize("&ePlease enter the mail's recipient."));
+							p.sendMessage(Utils.colorize("&aPlease enter the mail's recipient."));
 							break;
 						case 33:
 							if (e.getCurrentItem().equals(item_SendMail_Green)) {
 								for (int i=0; i<5; ++i) {
 									mail.setItem(i, e.getClickedInventory().getItem(11+i));
-									e.getClickedInventory().setItem(11+i, null);
 								}
-								MailboxManager.sendMail(mail, recipient.getUniqueId());
-								p.sendMessage(Utils.colorize("&eThe mail has been sent!"));
+								if (MailboxManager.sendMail(mail, recipient.getUniqueId())) {
+									p.sendMessage(Utils.colorize("&aThe mail has been sent!"));
+									for (int i=0; i<5; ++i) {
+										e.getClickedInventory().setItem(11+i, null);
+									}
+								} else {
+									p.sendMessage("&cThe mail could not be sent due to some error.");//TODO add Exceptions like MailboxFullException
+								}
 								MenuHandler.closeMenu(p);
+								p.closeInventory();
 							}
 							break;
 						case 44:
@@ -341,6 +345,7 @@ public class Menu implements Listener {
 										mailbox.removeMail(mailId);
 										Utils.cout("&eClosing the menu..");
 										MenuHandler.closeMenu(p);
+										p.closeInventory();
 										break;
 									case STORAGE_MINECART:
 										Utils.cout("&aOpening a package..");
@@ -356,7 +361,7 @@ public class Menu implements Listener {
 										for (int i=0; i<5; ++i) {
 											if (mail.getItems()[i] != null) {
 												ItemStack item = mail.getItems()[i];
-												p.sendMessage(Utils.colorize("&e" + item.getType().name() + "&a x&b" + item.getAmount()));
+												p.sendMessage(Utils.colorize("&b" + (item.getItemMeta().getDisplayName()==null ? item.getType().name() : item.getItemMeta().getDisplayName()) + "&a x&b" + item.getAmount()));
 												HashMap<Integer,ItemStack> items = p.getInventory().addItem(item);
 												if (!items.isEmpty()) {
 													p.getWorld().dropItem(p.getLocation(), items.values().iterator().next());//TODO dont drop items
@@ -367,6 +372,7 @@ public class Menu implements Listener {
 										mailbox.removeMail(mailId);
 										Utils.cout("&eClosing the menu..");
 										MenuHandler.closeMenu(p);
+										p.closeInventory();
 										break;
 									default: {}
 								}
@@ -408,6 +414,7 @@ public class Menu implements Listener {
 				if (closeInventoryMessage) {
 					p.sendMessage(Utils.colorize("&eType &6/mb&e to reopen the Mailbox GUI or type &6/mb close&e to close the menu. It will close automatically in 3 minutes."));
 					closeTask = Bukkit.getScheduler().runTaskLater(Mailboxes2.getInstance(), closeRunnable, 20*180L);
+					menuMinimized = true;
 				} else {
 					closeInventoryMessage = true;
 				}
@@ -420,9 +427,9 @@ public class Menu implements Listener {
 		if (e.getPlayer().getUniqueId().equals(p.getUniqueId())) {
 			e.setCancelled(true);
 			switch (inputType) {
-				case MESSAGE://TODO ban some characters
+				case MESSAGE://TODO ban some characters (allow only few characters actually)
 					mail.setMessage(e.getMessage());
-					inv_SendMail.setItem(28, Utils.editItem(item_SendMail_AddMessage, null, -1, "", "&7" + e.getMessage() + "~~&e> Click to edit text!", -1));
+					inv_SendMail.setItem(28, Utils.editItem(item_SendMail_AddMessage, null, -1, "", "&7" + e.getMessage() + "~~&e> Click to edit text!", -1));//TODO split into lines
 					inputType = InputType.NONE;
 					closeInventoryMessage = true;
 					openInventory(MenuType.SEND_MAIL);
@@ -451,7 +458,7 @@ public class Menu implements Listener {
 					e.setCancelled(true);
 					inputType = InputType.NONE;
 					closeInventoryMessage = false;
-					p.openInventory(inv_SendMail);
+					openInventory(currentMenu);
 					break;
 				default: {}
 			}
